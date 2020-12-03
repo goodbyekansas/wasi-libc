@@ -71,7 +71,7 @@ int chdir(const char *path)
 static const char *make_absolute(const char *path) {
     static char *make_absolute_buf = NULL;
     static size_t make_absolute_len = 0;
-
+    printf("make_absolut_buff All day: %p at %p\n", make_absolute_buf, &make_absolute_buf);
     // If this path is absolute, then we return it as-is.
     if (path[0] == '/') {
         return path;
@@ -90,20 +90,31 @@ static const char *make_absolute(const char *path) {
     // Otherwise we'll take the current directory, add a `/`, and then add the
     // input `path`. Note that this doesn't do any normalization (like removing
     // `/./`).
+    printf("CWDWASS: %s\n", __wasilibc_cwd);
     size_t cwd_len = strlen(__wasilibc_cwd);
     size_t path_len = strlen(path);
+    printf("Lens: %zu %zu\n", cwd_len, path_len);
     int need_slash = __wasilibc_cwd[cwd_len - 1] == '/' ? 0 : 1;
     size_t alloc_len = cwd_len + path_len + 1 + need_slash;
+    printf("make_absolut_buff before: %p\n", make_absolute_buf);
     if (alloc_len > make_absolute_len) {
+        printf("Reallocing %p, %zu\n", make_absolute_buf, alloc_len);
         make_absolute_buf = realloc(make_absolute_buf, alloc_len);
         if (make_absolute_buf == NULL)
             return NULL;
         make_absolute_len = alloc_len;
     }
+    printf("make_absolut_buff after: %p\n", make_absolute_buf);
+    printf("A cwd point: %s\n", __wasilibc_cwd);
+    printf("abslen: %zu\n", make_absolute_len);
     strcpy(make_absolute_buf, __wasilibc_cwd);
-    if (need_slash)
-        strcpy(make_absolute_buf + cwd_len, "/");
+    if (need_slash) {
+      printf("B cwd point: %s\n", __wasilibc_cwd);
+      strcpy(make_absolute_buf + cwd_len, "/");
+    }
+    printf("C cwd point: %s\n", __wasilibc_cwd);
     strcpy(make_absolute_buf + cwd_len + need_slash, path);
+    printf("D cwd point: %s\n", __wasilibc_cwd);
     return make_absolute_buf;
 }
 
@@ -117,8 +128,14 @@ int __wasilibc_find_relpath_alloc(
     size_t *relative_buf_len,
     int can_realloc
 ) {
+    printf("wasabibi path %s\n", path);
+    printf("wasabibi buff %p\n", relative_buf);
+    printf("wasabibi buff val %s\n", *relative_buf);
+    printf("wasabibi buff len %zu\n", *relative_buf_len);
     // First, make our path absolute taking the cwd into account.
     const char *abspath = make_absolute(path);
+    //printf("AA: %s  %s\n", abspath, path);
+    printf("Wasabibbi absolut %s\n", abspath);
     if (abspath == NULL) {
         errno = ENOMEM;
         return -1;
@@ -129,6 +146,7 @@ int __wasilibc_find_relpath_alloc(
     // into `relative_buf`.
     const char *rel;
     int fd = __wasilibc_find_abspath(abspath, abs_prefix, &rel);
+    printf("Wasabibbi FD %d\n", fd);
     if (fd == -1)
         return -1;
 
@@ -145,6 +163,7 @@ int __wasilibc_find_relpath_alloc(
         }
         *relative_buf = tmp;
         *relative_buf_len = rel_len + 1;
+        printf("Setting rel_len +1: %zu\n", rel_len+1);
     }
     strcpy(*relative_buf, rel);
     return fd;
